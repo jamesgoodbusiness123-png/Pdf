@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My GitHub Repos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & BASE ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#060d1a;color:#e2e8f0;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* ─── DESIGN TOKENS ──────────────────────────────────────────────*/
+:root{
+  --brand:#6ee7b7;       /* mint green */
+  --brand2:#34d399;
+  --brand3:#10b981;
+  --accent:#818cf8;      /* indigo for private repos */
+  --warn:#fbbf24;
+  --red:#f87171;
+  --bg:#060d1a;
+  --bg2:#0d1a2e;
+  --bg3:#112240;
+  --card:#0f1e35;
+  --border:rgba(110,231,183,.12);
+  --border2:rgba(110,231,183,.22);
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --muted2:#94a3b8;
+}
+
+/* ─── NAV ──────────────────────────────────────────────────────── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding:.9rem 1.25rem;
+  background:rgba(6,13,26,.92);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-brand{display:flex;align-items:center;gap:.65rem;font-weight:800;font-size:1rem;letter-spacing:.04em}
+.nav-brand svg{flex-shrink:0}
+.nav-brand .dot{color:var(--brand)}
+.back-btn{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.42rem .9rem;border-radius:8px;
+  background:rgba(110,231,183,.07);border:1px solid var(--border);
+  color:var(--muted2);font-size:.78rem;font-weight:600;cursor:pointer;
+  transition:all .18s;
+}
+.back-btn:hover{background:rgba(110,231,183,.13);color:var(--text)}
+
+/* ─── LAYOUT ───────────────────────────────────────────────────── */
+.container{max-width:880px;margin:0 auto;padding:0 1rem 6rem}
+
+/* ─── STATE: NOT CONNECTED ──────────────────────────────────────── */
+#screen-noconn{display:none;text-align:center;padding:4rem 1rem 3rem}
+.nc-blob{
+  width:100px;height:100px;margin:0 auto 1.5rem;border-radius:28px;
+  background:linear-gradient(135deg,rgba(110,231,183,.1),rgba(52,211,153,.04));
+  border:1.5px dashed rgba(110,231,183,.28);
+  display:flex;align-items:center;justify-content:center;
+  animation:float 4.5s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#screen-noconn h2{font-size:1.45rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,var(--brand),#a5f3fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#screen-noconn p{color:var(--muted);font-size:.9rem;line-height:1.7;max-width:340px;margin:0 auto 2rem}
+.connect-btn{
+  display:inline-flex;align-items:center;gap:.75rem;
+  padding:1rem 2rem;border-radius:14px;cursor:pointer;font-weight:700;font-size:.95rem;
+  background:linear-gradient(135deg,rgba(110,231,183,.13),rgba(52,211,153,.07));
+  border:2px solid rgba(110,231,183,.38);color:var(--text);
+  transition:all .22s;animation:pulse-ring 2.5s infinite;
+}
+.connect-btn:hover{border-color:rgba(110,231,183,.75);transform:translateY(-2px);box-shadow:0 10px 30px rgba(110,231,183,.18)}
+.connect-btn:active{transform:translateY(0)}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(110,231,183,.5)}70%{box-shadow:0 0 0 10px rgba(110,231,183,0)}}
+
+/* ─── STATE: LOADING ────────────────────────────────────────────── */
+#screen-loading{display:none;text-align:center;padding:4rem 1rem}
+.spinner{
+  width:44px;height:44px;margin:0 auto 1.5rem;
+  border-radius:50%;border:3px solid rgba(110,231,183,.15);
+  border-top-color:var(--brand2);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-msg{color:var(--muted);font-size:.85rem;font-family:monospace;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+.skels{display:flex;flex-direction:column;gap:.7rem;margin-top:2rem}
+.skel{height:92px;border-radius:14px;background:linear-gradient(90deg,rgba(17,34,64,.9) 25%,rgba(30,58,100,.5) 50%,rgba(17,34,64,.9) 75%);background-size:600px 100%;animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+
+/* ─── STATE: CONNECTED ──────────────────────────────────────────── */
+#screen-conn{display:none}
+
+/* user banner */
+.user-card{
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  padding:1rem 1.2rem;margin:1.5rem 0 1.25rem;
+  background:linear-gradient(135deg,rgba(110,231,183,.08),rgba(52,211,153,.03));
+  border:1px solid var(--border2);border-radius:18px;
+  animation:fadein .35s ease;
+}
+.user-avatar{width:48px;height:48px;border-radius:50%;border:2.5px solid rgba(110,231,183,.45);object-fit:cover;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-weight:700;font-size:.95rem;color:var(--text)}
+.user-bio{font-size:.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;margin-top:2px}
+.stat-row{display:flex;gap:1.2rem;flex-shrink:0}
+.stat{text-align:center}
+.stat-n{font-size:1.2rem;font-weight:800;line-height:1}
+.stat-l{font-size:.58rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+
+/* toolbar */
+.toolbar{display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:150px;position:relative}
+.search-wrap svg{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);pointer-events:none}
+.search-input{
+  width:100%;padding:.62rem .9rem .62rem 2.3rem;
+  background:var(--bg3);border:1.5px solid rgba(110,231,183,.12);
+  border-radius:11px;color:var(--text);font-size:.83rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-input::placeholder{color:var(--muted)}
+.search-input:focus{border-color:rgba(110,231,183,.45);box-shadow:0 0 0 3px rgba(110,231,183,.09)}
+.filters{display:flex;gap:.3rem;flex-shrink:0}
+.fbtn{
+  padding:.44rem .85rem;border-radius:22px;font-size:.74rem;font-weight:600;
+  cursor:pointer;border:1.5px solid rgba(110,231,183,.1);
+  background:rgba(110,231,183,.04);color:var(--muted);
+  transition:all .18s;white-space:nowrap;
+}
+.fbtn:hover{border-color:rgba(110,231,183,.25);color:var(--muted2)}
+.fbtn.active-all{background:rgba(110,231,183,.13);border-color:rgba(110,231,183,.38);color:var(--brand2)}
+.fbtn.active-priv{background:rgba(129,140,248,.1);border-color:rgba(129,140,248,.32);color:var(--accent)}
+.sort-sel{
+  padding:.52rem .7rem;background:var(--bg3);
+  border:1.5px solid rgba(110,231,183,.1);border-radius:11px;
+  color:var(--muted2);font-size:.78rem;outline:none;cursor:pointer;flex-shrink:0;
+  transition:border-color .2s;
+}
+.sort-sel:focus{border-color:rgba(110,231,183,.4)}
+.reload-btn{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  background:rgba(110,231,183,.07);border:1.5px solid rgba(110,231,183,.18);
+  color:var(--brand2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.reload-btn:hover{background:rgba(110,231,183,.16);border-color:rgba(110,231,183,.45)}
+.reload-btn:active svg{animation:spin .6s linear infinite}
+
+/* meta row */
+.meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem}
+.count-txt{font-size:.72rem;color:var(--muted)}
+.disc-btn{
+  font-size:.68rem;padding:.22rem .6rem;background:none;
+  border:1px solid rgba(248,113,113,.22);color:var(--red);
+  border-radius:7px;cursor:pointer;opacity:.65;transition:all .2s;
+}
+.disc-btn:hover{opacity:1;border-color:rgba(248,113,113,.5)}
+
+/* scope warning */
+.scope-warn{
+  display:none;flex-wrap:wrap;gap:.7rem;align-items:center;
+  margin-bottom:.9rem;padding:.85rem 1rem;
+  background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:12px;
+}
+.reauth-btn{
+  padding:.28rem .75rem;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;
+  background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.35);color:var(--warn);
+  transition:background .2s;
+}
+.reauth-btn:hover{background:rgba(251,191,36,.25)}
+
+/* repo list */
+.repo-list{display:flex;flex-direction:column;gap:.65rem}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.repo-card{
+  background:var(--card);border:1px solid rgba(110,231,183,.09);
+  border-radius:15px;padding:1.1rem 1.1rem;
+  display:flex;align-items:flex-start;gap:.85rem;
+  transition:all .22s;position:relative;overflow:hidden;
+  animation:fadein .3s ease both;
+}
+.repo-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(110,231,183,.55),transparent);
+  opacity:0;transition:opacity .22s;
+}
+.repo-card:hover{border-color:rgba(110,231,183,.28);background:#112240;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.repo-card:hover::before{opacity:1}
+.repo-card.priv{border-color:rgba(129,140,248,.1)}
+.repo-card.priv::before{background:linear-gradient(90deg,transparent,rgba(129,140,248,.5),transparent)}
+.repo-card.priv:hover{border-color:rgba(129,140,248,.3)}
+
+.repo-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.repo-body{flex:1;min-width:0}
+.repo-top{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.22rem}
+.repo-name{font-size:.9rem;font-weight:700;color:var(--text);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;transition:color .15s}
+.repo-name:hover{color:var(--brand)}
+.badge{font-size:.59rem;font-weight:700;padding:.12rem .44rem;border-radius:12px;flex-shrink:0}
+.badge-pub{background:rgba(110,231,183,.1);color:var(--brand2);border:1px solid rgba(110,231,183,.2)}
+.badge-priv{background:rgba(129,140,248,.1);color:var(--accent);border:1px solid rgba(129,140,248,.22)}
+.badge-fork{background:rgba(100,116,139,.07);color:var(--muted);border:1px solid rgba(100,116,139,.12)}
+.repo-desc{font-size:.74rem;color:var(--muted);margin:.22rem 0 .38rem;line-height:1.55}
+.topics{display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.38rem}
+.topic{font-size:.57rem;padding:.1rem .46rem;border-radius:10px;background:rgba(99,102,241,.08);color:#a5b4fc;border:1px solid rgba(99,102,241,.14)}
+.repo-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.meta-item{display:flex;align-items:center;gap:.26rem;font-size:.68rem;color:var(--muted)}
+.lang-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+.up-btn{
+  display:flex;align-items:center;gap:.4rem;align-self:center;flex-shrink:0;
+  padding:.55rem .95rem;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--brand2),var(--brand3));
+  color:#fff;font-size:.75rem;font-weight:700;white-space:nowrap;
+  transition:all .2s;box-shadow:0 2px 10px rgba(52,211,153,.28);
+}
+.up-btn:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(52,211,153,.44)}
+.up-btn:active{transform:none;box-shadow:none}
+
+.empty-state{text-align:center;padding:3rem 1rem;display:none}
+.empty-state .e-icon{font-size:2.5rem;margin-bottom:.7rem}
+
+/* ─── MODAL ────────────────────────────────────────────────────── */
+#modal{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(3,6,12,.82);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;padding:1rem;
+}
+#modal.open{display:flex}
+.modal-box{
+  background:#0d1a2e;border:1px solid rgba(110,231,183,.2);
+  border-radius:22px;padding:1.5rem;max-width:400px;width:100%;
+  box-shadow:0 32px 90px rgba(0,0,0,.75);
+  animation:fadein .22s ease;
+}
+.modal-repo-row{
+  display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem;
+  background:rgba(110,231,183,.05);border:1px solid rgba(110,231,183,.12);
+  border-radius:13px;margin-bottom:1.25rem;
+}
+.modal-repo-ico{
+  width:40px;height:40px;background:linear-gradient(135deg,#112240,#0d1a2e);
+  border:1px solid rgba(110,231,183,.25);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.modal-h{font-family:'Inter',sans-serif;font-size:1rem;font-weight:700;color:var(--text);margin:0 0 .3rem}
+.modal-sub{font-size:.75rem;color:var(--muted);margin:0 0 1rem}
+.dest-row{
+  display:flex;align-items:center;gap:.85rem;padding:.82rem .9rem;
+  border-radius:13px;border:1px solid rgba(110,231,183,.09);
+  background:rgba(15,30,53,.6);cursor:pointer;margin-bottom:.5rem;
+  transition:all .2s;
+}
+.dest-row:hover{border-color:rgba(110,231,183,.3);background:rgba(110,231,183,.06);transform:translateX(3px)}
+.dest-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.modal-cancel{
+  width:100%;margin-top:1rem;padding:.72rem;background:none;
+  border:1px solid rgba(100,116,139,.18);color:var(--muted);border-radius:11px;
+  cursor:pointer;font-size:.82rem;transition:all .2s;
+}
+.modal-cancel:hover{background:rgba(255,255,255,.03);color:var(--muted2)}
+#modal-status{font-size:.65rem;color:var(--brand2);text-align:right;flex-shrink:0;min-width:72px}
+
+/* ─── TOAST ────────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#112240;color:var(--text);padding:.7rem 1.2rem;border-radius:12px;
+  font-size:.82rem;z-index:99999;border:1px solid var(--border2);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;pointer-events:none;
+  opacity:0;transition:all .3s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:480px){
+  .repo-card{padding:.88rem}
+  .fbtn{padding:.38rem .6rem;font-size:.7rem}
+  .stat-row{gap:.85rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="#6ee7b7"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    MY <span class="dot">REPOS</span>
+  </div>
+  <button class="back-btn" onclick="history.back()">← Back</button>
+</nav>
+
+<!-- CONTAINER -->
+<div class="container">
+
+  <!-- NOT CONNECTED -->
+  <div id="screen-noconn">
+    <div class="nc-blob">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="rgba(110,231,183,.65)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </div>
+    <h2>Connect your GitHub</h2>
+    <p>Link your account once and browse all your repos — public and private — then deploy any of them instantly.</p>
+    <button class="connect-btn" onclick="doConnect()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#6ee7b7"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Connect GitHub Account
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="screen-loading">
+    <div class="spinner"></div>
+    <div id="load-msg" class="load-msg">Fetching your repositories…</div>
+    <div class="skels">
+      <div class="skel"></div>
+      <div class="skel" style="opacity:.65"></div>
+      <div class="skel" style="opacity:.4"></div>
+    </div>
+  </div>
+
+  <!-- CONNECTED -->
+  <div id="screen-conn">
+
+    <!-- User card -->
+    <div class="user-card">
+      <img id="g-avatar" src="" alt="" class="user-avatar">
+      <div class="user-info">
+        <div id="g-login" class="user-name"></div>
+        <div id="g-bio" class="user-bio"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div id="g-pub" class="stat-n" style="color:var(--brand2)">—</div><div class="stat-l">Public</div></div>
+        <div class="stat"><div id="g-priv" class="stat-n" style="color:var(--accent)">—</div><div class="stat-l">Private</div></div>
+        <div class="stat"><div id="g-tot" class="stat-n" style="color:var(--text)">—</div><div class="stat-l">Total</div></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input id="g-search" class="search-input" type="text" placeholder="Search repositories…" oninput="renderList()">
+      </div>
+      <div class="filters">
+        <button class="fbtn active-all" id="btn-all"  onclick="setFilter('all')">All</button>
+        <button class="fbtn"            id="btn-pub"  onclick="setFilter('public')">🌐 Public</button>
+        <button class="fbtn"            id="btn-priv" onclick="setFilter('private')">🔒 Private</button>
+      </div>
+      <select id="g-sort" class="sort-sel" onchange="renderList()">
+        <option value="updated">Recently Updated</option>
+        <option value="stars">Most Stars</option>
+        <option value="name">A → Z</option>
+        <option value="forks">Most Forks</option>
+        <option value="size">Largest</option>
+      </select>
+      <button class="reload-btn" onclick="doRefresh()" title="Refresh">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Meta row -->
+    <div class="meta-row">
+      <div id="g-count" class="count-txt"></div>
+      <button class="disc-btn" onclick="doDisconnect()">Disconnect GitHub</button>
+    </div>
+
+    <!-- Scope warning -->
+    <div id="g-scope" class="scope-warn">
+      <span style="font-size:1.1rem">⚠️</span>
+      <div style="flex:1;font-size:.78rem;color:var(--warn);line-height:1.5"><strong>Private repos not showing?</strong> Your token may only have public access.</div>
+      <button class="reauth-btn" onclick="doReauth()">Re-authorize with private access</button>
+    </div>
+
+    <!-- List -->
+    <div id="g-list" class="repo-list" onclick="listClick(event)"></div>
+
+    <!-- Empty -->
+    <div id="g-empty" class="empty-state">
+      <div class="e-icon">🔍</div>
+      <p style="color:var(--muted);font-size:.85rem">No repositories match your search.</p>
+    </div>
+
+  </div><!-- /screen-conn -->
+</div><!-- /container -->
+
+<!-- MODAL -->
+<div id="modal" onclick="modalBgClick(event)">
+  <div class="modal-box">
+    <div class="modal-repo-row">
+      <div class="modal-repo-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#6ee7b7"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div id="m-name" style="font-size:.88rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+        <div id="m-meta" style="font-size:.68rem;color:var(--muted);margin-top:.1rem"></div>
+      </div>
+      <div id="modal-status"></div>
+    </div>
+    <h3 class="modal-h">Where to deploy?</h3>
+    <p class="modal-sub">Choose a hosting type — we'll download your repo and pre-load it.</p>
+    <div class="dest-row" onclick="deployTo('site')">
+      <div class="dest-ico" style="background:linear-gradient(135deg,rgba(110,231,183,.15),rgba(52,211,153,.07))">🚀</div>
+      <div style="flex:1"><div style="font-size:.88rem;font-weight:700;color:var(--text)">Site Hosting</div><div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">Deploy as a website with subdomain + DNS</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="dest-row" onclick="deployTo('bot')">
+      <div class="dest-ico" style="background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(16,185,129,.06))">🤖</div>
+      <div style="flex:1"><div style="font-size:.88rem;font-weight:700;color:var(--text)">Bot Hosting</div><div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">WhatsApp / Telegram / Discord bots</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="dest-row" onclick="deployTo('game')">
+      <div class="dest-ico" style="background:linear-gradient(135deg,rgba(129,140,248,.15),rgba(99,102,241,.07))">🎮</div>
+      <div style="flex:1"><div style="font-size:.88rem;font-weight:700;color:var(--text)">Game Hosting</div><div style="font-size:.72rem;color:var(--muted);margin-top:.1rem">Minecraft, Rust, CS2 and more</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script>
+/* ================================================================
+   STANDALONE REPOS PAGE
+   - Works entirely on its own, no external app dependencies
+   - Reads GITHUB_CLIENT_ID and PROXY_BASE from config below
+   - Stores token in localStorage('repos_gh_token')
+================================================================ */
+
+// ── CONFIG — edit these to match your app ──────────────────────
+var CLIENT_ID   = (function(){
+  // Try to read from parent app globals if embedded, otherwise use env
+  if(typeof GITHUB_CLIENT_ID !== 'undefined') return GITHUB_CLIENT_ID;
+  return 'Iv23li9zxtpoEhNUdcPL'; // fallback
+})();
+
+var PROXY = (function(){
+  if(typeof PROXY_BASE !== 'undefined') return PROXY_BASE;
+  // Derive proxy from current origin if on the same server
+  return window.location.origin;
+})();
+
+var TOKEN_KEY = 'repos_gh_token';
+
+// ── State ──────────────────────────────────────────────────────
+var allRepos  = [];
+var curFilter = 'all';
+var activeRepo = null;
+
+// ── Lang colours ───────────────────────────────────────────────
+var LANG = {
+  JavaScript:'#f1e05a',TypeScript:'#3178c6',Python:'#3572A5',Java:'#b07219',
+  'C++':'#f34b7d',C:'#555555','C#':'#178600',PHP:'#4F5D95',Go:'#00ADD8',
+  Ruby:'#701516',Rust:'#dea584',Kotlin:'#A97BFF',Swift:'#F05138',
+  Dart:'#00B4AB',HTML:'#e34c26',CSS:'#563d7c',Shell:'#89e051',
+  Dockerfile:'#384d54',Vue:'#41b883',Svelte:'#ff3e00'
+};
+
+// ── Helpers ────────────────────────────────────────────────────
+function qs(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function relTime(d){
+  var s=Math.floor((Date.now()-d.getTime())/1000);
+  if(s<60) return 'just now';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  if(s<2592000) return Math.floor(s/86400)+'d ago';
+  if(s<31536000) return Math.floor(s/2592000)+'mo ago';
+  return Math.floor(s/31536000)+'y ago';
+}
+function fmt(n){ return n>=1000?(n/1000).toFixed(1)+'k':String(n); }
+function sz(k){ return k<1024?k+'KB':(k/1024).toFixed(1)+'MB'; }
+function showToast(msg){
+  var t=qs('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3200);
+}
+function delay(ms){ return new Promise(function(r){setTimeout(r,ms);}); }
+
+// ── Show states ────────────────────────────────────────────────
+function showState(s){
+  qs('screen-noconn').style.display  = s==='noconn'  ? 'block' : 'none';
+  qs('screen-loading').style.display = s==='loading' ? 'block' : 'none';
+  qs('screen-conn').style.display    = s==='conn'    ? 'block' : 'none';
+}
+
+// ── Init ───────────────────────────────────────────────────────
+function init(){
+  // Check for OAuth callback
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  if(code){
+    // Exchange code for token via proxy
+    window.history.replaceState({},document.title,window.location.pathname);
+    showState('loading');
+    qs('load-msg').textContent = 'Completing GitHub login…';
+    exchangeCode(code);
+    return;
+  }
+  var tok = localStorage.getItem(TOKEN_KEY);
+  if(!tok){ showState('noconn'); return; }
+  showState('loading');
+  loadRepos(tok);
+}
+
+// ── OAuth exchange ─────────────────────────────────────────────
+async function exchangeCode(code){
+  try{
+    var r = await fetch(PROXY+'/github/callback?code='+encodeURIComponent(code));
+    var d = await r.json();
+    var tok = d.access_token || d.token || '';
+    if(!tok){ showState('noconn'); showToast('❌ GitHub login failed'); return; }
+    localStorage.setItem(TOKEN_KEY, tok);
+    loadRepos(tok);
+  }catch(e){
+    showState('noconn');
+    showToast('❌ Login error: '+e.message);
+  }
+}
+
+// ── Load repos ─────────────────────────────────────────────────
+async function loadRepos(tok){
+  showState('loading');
+  var msgEl = qs('load-msg');
+  if(msgEl) msgEl.textContent = 'Fetching your repositories…';
+  try{
+    // User info
+    var uRes = await fetch(PROXY+'/github/user',{headers:{'Authorization':'Bearer '+tok}});
+    if(uRes.status===401){ localStorage.removeItem(TOKEN_KEY); showState('noconn'); showToast('Session expired — please reconnect'); return; }
+    var u = uRes.ok ? await uRes.json() : null;
+    if(u && u.login){
+      qs('g-avatar').src = u.avatar_url||'';
+      qs('g-login').textContent = u.login;
+      qs('g-bio').textContent   = u.bio||u.email||'';
+    }
+    if(msgEl) msgEl.textContent = 'Loading repositories…';
+    // Repos
+    var repos=[];
+    try{
+      var rRes = await fetch(PROXY+'/github/repos',{headers:{'Authorization':'Bearer '+tok}});
+      if(rRes.ok){ var d=await rRes.json(); if(Array.isArray(d)) repos=d; }
+    }catch(e2){}
+    allRepos = repos;
+    var pub  = repos.filter(function(r){return !r.private;}).length;
+    var priv = repos.filter(function(r){return  r.private;}).length;
+    qs('g-pub').textContent  = pub;
+    qs('g-priv').textContent = priv;
+    qs('g-tot').textContent  = repos.length;
+    showState('conn');
+    renderList();
+    qs('g-scope').style.display = (priv===0 && repos.length>0) ? 'flex' : 'none';
+  }catch(err){
+    showState('noconn');
+    showToast('❌ Could not load repos: '+err.message);
+  }
+}
+
+// ── Filter ─────────────────────────────────────────────────────
+function setFilter(f){
+  curFilter = f;
+  ['all','pub','priv'].forEach(function(k){
+    var b = qs('btn-'+k);
+    if(!b) return;
+    b.className = 'fbtn';
+    if((k==='all'&&f==='all')||(k==='pub'&&f==='public')||(k==='priv'&&f==='private')){
+      b.className = 'fbtn ' + (f==='private'?'active-priv':'active-all');
+    }
+  });
+  renderList();
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function renderList(){
+  var q    = (qs('g-search')?qs('g-search').value:'').toLowerCase().trim();
+  var sort = qs('g-sort')?qs('g-sort').value:'updated';
+  var list = allRepos.filter(function(r){
+    if(curFilter==='public'  &&  r.private) return false;
+    if(curFilter==='private' && !r.private) return false;
+    if(q && !r.full_name.toLowerCase().includes(q) && !(r.description||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  list.sort(function(a,b){
+    switch(sort){
+      case 'stars': return (b.stargazers_count||0)-(a.stargazers_count||0);
+      case 'name':  return a.name.localeCompare(b.name);
+      case 'forks': return (b.forks_count||0)-(a.forks_count||0);
+      case 'size':  return (b.size||0)-(a.size||0);
+      default:      return new Date(b.updated_at||0)-new Date(a.updated_at||0);
+    }
+  });
+  var ct = qs('g-count');
+  if(ct) ct.textContent = list.length+' of '+allRepos.length+' repositories';
+  var container = qs('g-list');
+  var emptyEl   = qs('g-empty');
+  if(!container) return;
+  if(list.length===0){
+    container.innerHTML='';
+    if(emptyEl) emptyEl.style.display='block';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display='none';
+  container.innerHTML = list.map(buildCard).join('');
+}
+
+// ── Build card ─────────────────────────────────────────────────
+function buildCard(r, idx){
+  var lc  = LANG[r.language]||'#64748b';
+  var upd = r.updated_at ? relTime(new Date(r.updated_at)) : '';
+  var isp = r.private;
+  var desc = r.description ? (r.description.length>90 ? r.description.slice(0,90)+'…' : r.description) : '';
+  var tops = (r.topics||[]).slice(0,4);
+  var info = esc(JSON.stringify({
+    owner:(r.full_name||'').split('/')[0],
+    repo:r.name,
+    branch:r.default_branch||'main',
+    full_name:r.full_name,
+    private:r.private,
+    language:r.language||''
+  }));
+  return '<div class="repo-card'+(isp?' priv':'')+'" style="animation-delay:'+(idx*0.04)+'s">'
+    +'<div class="repo-ico" style="background:'+(isp?'rgba(129,140,248,.08)':'rgba(110,231,183,.08)')+';border:1px solid '+(isp?'rgba(129,140,248,.2)':'rgba(110,231,183,.15)')+'">'
+      +'<svg width="19" height="19" viewBox="0 0 24 24" fill="'+(isp?'#818cf8':'#6ee7b7')+'"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>'
+    +'</div>'
+    +'<div class="repo-body">'
+      +'<div class="repo-top">'
+        +'<a href="'+esc(r.html_url||'#')+'" target="_blank" rel="noopener" class="repo-name">'+esc(r.name)+'</a>'
+        +'<span class="badge '+(isp?'badge-priv':'badge-pub')+'">'+(isp?'🔒 Private':'🌐 Public')+'</span>'
+        +(r.fork?'<span class="badge badge-fork">🍴 Fork</span>':'')
+      +'</div>'
+      +(desc?'<div class="repo-desc">'+esc(desc)+'</div>':'')
+      +(tops.length?'<div class="topics">'+tops.map(function(t){return'<span class="topic">'+esc(t)+'</span>';}).join('')+'</div>':'')
+      +'<div class="repo-meta">'
+        +(r.language?'<span class="meta-item"><span class="lang-dot" style="background:'+lc+'"></span>'+esc(r.language)+'</span>':'')
+        +(r.stargazers_count?'<span class="meta-item">⭐ '+fmt(r.stargazers_count)+'</span>':'')
+        +(r.forks_count?'<span class="meta-item">🍴 '+fmt(r.forks_count)+'</span>':'')
+        +(r.size?'<span class="meta-item">💾 '+sz(r.size)+'</span>':'')
+        +(upd?'<span class="meta-item">🕒 '+upd+'</span>':'')
+      +'</div>'
+    +'</div>'
+    +'<button class="up-btn" data-info="'+info+'">'
+      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+      +' Upload'
+    +'</button>'
+  +'</div>';
+}
+
+// ── Upload button click delegation ────────────────────────────
+function listClick(e){
+  var btn = e.target.closest('.up-btn');
+  if(!btn) return;
+  var raw = btn.getAttribute('data-info');
+  if(!raw) return;
+  try{ openModal(JSON.parse(raw.replace(/&quot;/g,'"'))); }catch(err){}
+}
+
+// ── Refresh ────────────────────────────────────────────────────
+function doRefresh(){
+  var tok = localStorage.getItem(TOKEN_KEY);
+  if(!tok){ showState('noconn'); return; }
+  loadRepos(tok);
+}
+
+// ── Connect ────────────────────────────────────────────────────
+function doConnect(){
+  localStorage.setItem('repos_return','1');
+  var cb  = window.location.origin + window.location.pathname;
+  window.location.href = 'https://github.com/login/oauth/authorize'
+    +'?client_id='+CLIENT_ID
+    +'&scope=repo%2Cread%3Aorg%2Cuser'
+    +'&redirect_uri='+encodeURIComponent(cb);
+}
+
+// ── Disconnect ─────────────────────────────────────────────────
+function doDisconnect(){
+  localStorage.removeItem(TOKEN_KEY);
+  allRepos=[];
+  showState('noconn');
+  showToast('GitHub disconnected');
+}
+
+// ── Reauth with private scope ──────────────────────────────────
+function doReauth(){
+  localStorage.removeItem(TOKEN_KEY);
+  var cb  = window.location.origin + window.location.pathname;
+  window.location.href = 'https://github.com/login/oauth/authorize'
+    +'?client_id='+CLIENT_ID
+    +'&scope=repo%2Cread%3Aorg%2Cuser'
+    +'&redirect_uri='+encodeURIComponent(cb)
+    +'&prompt=consent';
+}
+
+// ── Modal ──────────────────────────────────────────────────────
+function openModal(info){
+  activeRepo = info;
+  qs('m-name').textContent   = info.full_name||'';
+  qs('m-meta').textContent   = (info.language||'Repo')+' · '+(info.private?'🔒 Private':'🌐 Public');
+  qs('modal-status').textContent = '';
+  qs('modal').classList.add('open');
+}
+function closeModal(){
+  qs('modal').classList.remove('open');
+  activeRepo = null;
+}
+function modalBgClick(e){
+  if(e.target===qs('modal')) closeModal();
+}
+
+// ── Deploy ─────────────────────────────────────────────────────
+async function deployTo(dest){
+  if(!activeRepo) return;
+  var info = activeRepo;
+  var stEl = qs('modal-status');
+  if(stEl) stEl.textContent='⏳ Downloading…';
+  var tok = localStorage.getItem(TOKEN_KEY);
+  if(!tok){ if(stEl) stEl.textContent='❌ Not connected'; return; }
+
+  try{
+    // Download zip via proxy
+    var buf = await downloadZip(tok, info.owner, info.repo, info.branch||'main');
+    var fname = info.repo+'-'+(info.branch||'main')+'.zip';
+    var file  = new File([new Blob([buf],{type:'application/zip'})],fname,{type:'application/zip'});
+    if(stEl) stEl.textContent='✅ '+(buf.byteLength/1024).toFixed(0)+' KB';
+    await delay(280);
+    closeModal();
+    routeFile(dest, file, info);
+  }catch(err){
+    if(stEl) stEl.textContent='❌ '+err.message;
+  }
+}
+
+async function downloadZip(tok, owner, repo, branch){
+  // Try proxy first
+  try{
+    var r = await fetch(PROXY+'/github/download?owner='+encodeURIComponent(owner)+'&repo='+encodeURIComponent(repo)+'&branch='+encodeURIComponent(branch),
+      {headers:{'Authorization':'Bearer '+tok}});
+    if(r.ok) return await r.arrayBuffer();
+  }catch(e){}
+  // Fallback to GitHub API directly
+  var r = await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/zipball/'+branch,
+    {headers:{'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'}});
+  if(!r.ok) throw new Error('Download failed ('+r.status+')');
+  return await r.arrayBuffer();
+}
+
+function routeFile(dest, file, info){
+  // If embedded in the main app, call its page functions
+  if(dest==='site' && typeof openSiteDeployPage==='function'){
+    openSiteDeployPage();
+    setTimeout(function(){
+      if(typeof _sdSetFile==='function'){_sdSetFile(file);}else{window._sdFile=file;}
+      var chip=document.getElementById('siteDeployFileChip');
+      var name=document.getElementById('siteDeployFileName');
+      var size=document.getElementById('siteDeployFileSize');
+      if(chip)chip.style.display='flex';
+      if(name)name.textContent=file.name;
+      if(size)size.textContent=(file.size/1024/1024).toFixed(2)+' MB';
+      showToast('📦 '+info.full_name+' → Site Hosting');
+    },150);
+    return;
+  }
+  if(dest==='bot' && typeof openBotHosting==='function'){
+    openBotHosting();
+    setTimeout(function(){
+      window._botFile=file;
+      var chip=document.getElementById('botDeployFileChip');
+      var name=document.getElementById('botDeployFileName');
+      var size=document.getElementById('botDeployFileSize');
+      if(chip)chip.style.display='flex';
+      if(name)name.textContent=file.name;
+      if(size)size.textContent=(file.size/1024/1024).toFixed(2)+' MB';
+      showToast('🤖 '+info.full_name+' → Bot Hosting');
+    },150);
+    return;
+  }
+  if(dest==='game' && typeof openGameHosting==='function'){
+    openGameHosting();
+    setTimeout(function(){
+      window._gameFile=file;
+      var chip=document.getElementById('gameDeployFileChip');
+      var name=document.getElementById('gameDeployFileName');
+      var size=document.getElementById('gameDeployFileSize');
+      if(chip)chip.style.display='flex';
+      if(name)name.textContent=file.name;
+      if(size)size.textContent=(file.size/1024/1024).toFixed(2)+' MB';
+      showToast('🎮 '+info.full_name+' → Game Hosting');
+    },150);
+    return;
+  }
+  // Standalone fallback: offer file download
+  var url = URL.createObjectURL(file);
+  var a   = document.createElement('a');
+  a.href  = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+  showToast('📦 '+info.full_name+' downloaded as ZIP');
+}
+
+// ── Start ──────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
